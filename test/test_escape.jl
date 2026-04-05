@@ -1,0 +1,20 @@
+@testset "escape_latex" begin
+    @test escape_latex("hello") == "hello"
+    @test escape_latex("&")    == raw"\&"
+    @test escape_latex("%")    == raw"\%"
+    @test escape_latex("\$")   == raw"\$"
+    @test escape_latex("#")    == raw"\#"
+    @test escape_latex("_")    == raw"\_"
+    @test escape_latex("{")    == raw"\{"
+    @test escape_latex("}")    == raw"\}"
+    @test escape_latex("~")    == raw"\textasciitilde{}"
+    @test escape_latex("^")    == raw"\^{}"
+    @test escape_latex("\\")   == raw"\textbackslash{}"
+    @test escape_latex("-")    == "{-}"
+    @test escape_latex("[")    == "{[}"
+    @test escape_latex("]")    == "{]}"
+    @test escape_latex("\u00A0") == "~"
+    # Combined
+    @test escape_latex("a-b") == "a{-}b"
+    @test escape_latex("x_y") == raw"x\_y"
+end

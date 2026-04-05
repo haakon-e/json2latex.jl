@@ -1,0 +1,169 @@
+\makeatletter%
+\newcommand\data[1][all]{%
+  \ifnum\pdfstrcmp{#1}{all}=0%
+    \def\data@out{%
+    \{%
+      "foo": {[}%
+        0.1, %
+        3%
+      {]}, %
+      "bar": true, %
+      "baz": "test", %
+      "blah123": {[}%
+        \{%
+          "a": "b", %
+          "test": 3.1415%
+        \}, %
+        \{%
+          "c": "f", %
+          "g": {[}%
+            "x", %
+            "yz", %
+            101%
+          {]}%
+        \}%
+      {]}%
+    \}}%
+  \else%
+    \ifnum\pdfstrcmp{#1}{foo}=0%
+      \let\data@out\data@I%
+    \else%
+      \ifnum\pdfstrcmp{#1}{bar}=0%
+      \def\data@out{%
+    true}%
+    \else%
+      \ifnum\pdfstrcmp{#1}{baz}=0%
+      \def\data@out{%
+    test}%
+    \else%
+      \ifnum\pdfstrcmp{#1}{blah123}=0%
+      \let\data@out\data@II%
+    \else%
+      \def\data@out{%
+    ??}%
+    \fi\fi\fi\fi
+  \fi
+  \data@out
+}\newcommand\data@I[1][all]{%
+  \ifnum\pdfstrcmp{#1}{all}=0%
+    \def\data@I@out{%
+    {[}%
+      0.1, %
+      3%
+    {]}}%
+  \else%
+    \ifnum\pdfstrcmp{#1}{1}=0%
+      \def\data@I@out{%
+    0.1}%
+    \else%
+      \ifnum\pdfstrcmp{#1}{2}=0%
+      \def\data@I@out{%
+    3}%
+    \else%
+      \def\data@I@out{%
+    ??}%
+    \fi\fi
+  \fi
+  \data@I@out
+}\newcommand\data@II[1][all]{%
+  \ifnum\pdfstrcmp{#1}{all}=0%
+    \def\data@II@out{%
+    {[}%
+      \{%
+        "a": "b", %
+        "test": 3.1415%
+      \}, %
+      \{%
+        "c": "f", %
+        "g": {[}%
+          "x", %
+          "yz", %
+          101%
+        {]}%
+      \}%
+    {]}}%
+  \else%
+    \ifnum\pdfstrcmp{#1}{1}=0%
+      \let\data@II@out\data@III%
+    \else%
+      \ifnum\pdfstrcmp{#1}{2}=0%
+      \let\data@II@out\data@IV%
+    \else%
+      \def\data@II@out{%
+    ??}%
+    \fi\fi
+  \fi
+  \data@II@out
+}\newcommand\data@III[1][all]{%
+  \ifnum\pdfstrcmp{#1}{all}=0%
+    \def\data@III@out{%
+    \{%
+      "a": "b", %
+      "test": 3.1415%
+    \}}%
+  \else%
+    \ifnum\pdfstrcmp{#1}{a}=0%
+      \def\data@III@out{%
+    b}%
+    \else%
+      \ifnum\pdfstrcmp{#1}{test}=0%
+      \def\data@III@out{%
+    3.1415}%
+    \else%
+      \def\data@III@out{%
+    ??}%
+    \fi\fi
+  \fi
+  \data@III@out
+}\newcommand\data@IV[1][all]{%
+  \ifnum\pdfstrcmp{#1}{all}=0%
+    \def\data@IV@out{%
+    \{%
+      "c": "f", %
+      "g": {[}%
+        "x", %
+        "yz", %
+        101%
+      {]}%
+    \}}%
+  \else%
+    \ifnum\pdfstrcmp{#1}{c}=0%
+      \def\data@IV@out{%
+    f}%
+    \else%
+      \ifnum\pdfstrcmp{#1}{g}=0%
+      \let\data@IV@out\data@V%
+    \else%
+      \def\data@IV@out{%
+    ??}%
+    \fi\fi
+  \fi
+  \data@IV@out
+}\newcommand\data@V[1][all]{%
+  \ifnum\pdfstrcmp{#1}{all}=0%
+    \def\data@V@out{%
+    {[}%
+      "x", %
+      "yz", %
+      101%
+    {]}}%
+  \else%
+    \ifnum\pdfstrcmp{#1}{1}=0%
+      \def\data@V@out{%
+    x}%
+    \else%
+      \ifnum\pdfstrcmp{#1}{2}=0%
+      \def\data@V@out{%
+    yz}%
+    \else%
+      \ifnum\pdfstrcmp{#1}{3}=0%
+      \def\data@V@out{%
+    101}%
+    \else%
+      \def\data@V@out{%
+    ??}%
+    \fi\fi\fi
+  \fi
+  \data@V@out
+}%
+\makeatother%

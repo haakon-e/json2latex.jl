@@ -1,169 +1,54 @@
+"""
+    json2latex
+
+Convert JSON/Julia data structures into self-contained LaTeX macro definitions.
+
+The generated macros support optional key arguments for field access and work
+with pdfLaTeX and LuaLaTeX (`\\pdfstrcmp` is required).
+
+# Quick start
+
+**From a Julia `Dict` — no extra packages needed:**
+
+```julia
+using json2latex
+
+tex = dumps("data", Dict("title" => "My paper", "year" => 2024))
+write("data.tex", tex)
+# \\data[title] → "My paper",  \\data[year] → "2024",  \\data → full JSON
+```
+
+**From a JSON file — name and output path inferred from the filename:**
+
+```julia
+generate_tex("data.json")                               # → data.tex, \\data
+generate_tex("data.json"; tex_file = "build/data.tex")  # custom output path
+```
+
+**Incremental merge workflow** (accumulate data across runs, regenerate TeX):
+
+```julia
+generate_tex!("data.json", Dict("version" => "2.0"))
+```
+
+!!! note
+    When key order in the output must match the source JSON, pass an
+    `OrderedDict` to `dumps` — it is re-exported by this package so no
+    additional `using` statement is required.  `generate_tex` and
+    `generate_tex!` always preserve order automatically.
+
+See also: [`dumps`](@ref), [`generate_tex`](@ref), [`generate_tex!`](@ref).
+"""
 module json2latex
 
-using JSON
-using OrderedCollections
+import JSON
+using ArgParse
+using OrderedCollections: OrderedDict
 
-export dumps, dump_tex, update_and_generate_tex, escape_latex, to_roman, check_name
+export dumps, generate_tex, generate_tex!, OrderedDict
 
-# ---------------------------------------------------------------------------
-# LaTeX character escaping (mirrors json2latex/escape.py)
-# ---------------------------------------------------------------------------
-
-const LATEX_ESCAPES = Dict{Char,String}(
-    '&'      => "\\&",
-    '%'      => "\\%",
-    '$'      => "\\\$",
-    '#'      => "\\#",
-    '_'      => "\\_",
-    '{'      => "\\{",
-    '}'      => "\\}",
-    '~'      => "\\textasciitilde{}",
-    '^'      => "\\^{}",
-    '\\'     => "\\textbackslash{}",
-    '\n'     => "\\newline%\n",
-    '-'      => "{-}",
-    '\u00A0' => "~",
-    '['      => "{[}",
-    ']'      => "{]}",
-)
-
-function escape_latex(s::AbstractString)
-    io = IOBuffer()
-    for c in s
-        write(io, get(LATEX_ESCAPES, c, string(c)))
-    end
-    String(take!(io))
-end
-
-# ---------------------------------------------------------------------------
-# Roman numeral conversion (needed for sub-command naming)
-# ---------------------------------------------------------------------------
-
-const _ROMAN_VALS = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
-const _ROMAN_SYMS = ["M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"]
-
-function to_roman(n::Int)
-    n > 0 || throw(ArgumentError("n must be positive, got $n"))
-    buf = IOBuffer()
-    rem = n
-    for (v, s) in zip(_ROMAN_VALS, _ROMAN_SYMS)
-        while rem >= v
-            write(buf, s)
-            rem -= v
-        end
-    end
-    String(take!(buf))
-end
-
-# ---------------------------------------------------------------------------
-# Macro name helpers
-# ---------------------------------------------------------------------------
-
-function check_name(name::AbstractString)
-    isempty(name) && throw(ArgumentError("LaTeX macro name must not be empty"))
-    for c in name
-        (isuppercase(c) || islowercase(c)) ||
-            throw(ArgumentError("LaTeX macro name '$name' must contain only letters, got '$c'"))
-    end
-end
-
-_macro_name(name::String, ind::Int) =
-    ind > 0 ? "\\$(name)@$(to_roman(ind))" : "\\$(name)"
-
-_out_macro_name(name::String, ind::Int) = _macro_name(name, ind) * "@out"
-
-# ---------------------------------------------------------------------------
-# Scalar value → string
-# Mirrors Python's str() for common types; booleans use lowercase (JSON standard)
-# ---------------------------------------------------------------------------
-
-_scalar_str(v::AbstractString) = v
-_scalar_str(v::Bool)           = string(v)          # "true" / "false"
-_scalar_str(v::Integer)        = string(v)
-_scalar_str(v::AbstractFloat)  = string(v)
-_scalar_str(::Nothing)         = "null"
-_scalar_str(v)                 = string(v)
-
-# ---------------------------------------------------------------------------
-# \def\name@out{%  ...multiline value...  }%
-# ---------------------------------------------------------------------------
-
-function _def_out!(io::IO, name::String, ind::Int, value)
-    tex_value = _scalar_str(value)
-    print(io, "\\def$(_out_macro_name(name, ind)){%")
-    parts = split(tex_value, "\n")
-    for (i, part) in enumerate(parts)
-        print(io, "\n    ")                      # _nl(indent=2) = 4 spaces
-        print(io, escape_latex(part))
-        if i < length(parts)
-            endswith(part, ",") && print(io, " ")
-            print(io, "%")
-        end
-    end
-    print(io, "}%")
-end
-
-# \let\name@out\relay_macro%
-function _let_out!(io::IO, name::String, ind::Int, relay::Int)
-    print(io, "\\let$(_out_macro_name(name, ind))$(_macro_name(name, relay))%")
-end
-
-# ---------------------------------------------------------------------------
-# Add key branches: one \ifnum\pdfstrcmp per key, ?? fallback
-# ---------------------------------------------------------------------------
-
-function _add_options!(io::IO, name::String, ind::Int,
-                       pairs_iter,
-                       to_convert::OrderedDict{Int,Any}, index::Ref{Int})
-    levels = 0
-    for (key, value) in pairs_iter
-        levels += 1
-        print(io, "\\ifnum\\pdfstrcmp{#1}{$(key)}=0%")
-        print(io, "\n      ")                    # _nl(indent=3)
-        if value isa Union{AbstractDict, AbstractVector}
-            _let_out!(io, name, ind, index[])
-            to_convert[index[]] = value
-            index[] += 1
-        else
-            _def_out!(io, name, ind, value)
-        end
-        print(io, "\n    ")                      # _nl(indent=2)
-        print(io, "\\else%")
-        print(io, "\n      ")                    # _nl(indent=3)
-    end
-    _def_out!(io, name, ind, "??")
-    print(io, "\n    ")                          # _nl(indent=2)
-    print(io, "\\fi" ^ levels)
-end
-
-# ---------------------------------------------------------------------------
-# Single \newcommand block
-# ---------------------------------------------------------------------------
-
-function _convert_one!(io::IO, name::String, ind::Int, obj,
-                       to_convert::OrderedDict{Int,Any}, index::Ref{Int})
-    print(io, "\\newcommand$(_macro_name(name, ind))[1][all]{%")
-    print(io, "\n  ")                            # _nl(indent=1)
-    print(io, "\\ifnum\\pdfstrcmp{#1}{all}=0%")
-    print(io, "\n    ")                          # _nl(indent=2)
-    _def_out!(io, name, ind, JSON.json(obj, 2))
-    print(io, "\n  ")                            # _nl(indent=1)
-    print(io, "\\else%")
-    print(io, "\n    ")                          # _nl(indent=2)
-    if obj isa AbstractVector
-        _add_options!(io, name, ind,
-                      ((i - 1, v) for (i, v) in enumerate(obj)),
-                      to_convert, index)
-    elseif obj isa AbstractDict
-        _add_options!(io, name, ind, pairs(obj), to_convert, index)
-    end
-    print(io, "\n  ")                            # _nl(indent=1)
-    print(io, "\\fi")
-    print(io, "\n  ")                            # _nl(indent=1)
-    print(io, _out_macro_name(name, ind))
-    print(io, "\n")                              # _nl(indent=0)
-    print(io, "}")
-end
+include("escape.jl")
+include("convert.jl")
 
 # ---------------------------------------------------------------------------
 # Public API
@@ -172,90 +57,198 @@ end
 """
     dumps(name, obj) -> String
 
-Convert a nested Julia structure (Dict/Vector/scalar) to a LaTeX string.
-The result defines `\\name[key][subkey]...` macros.
+Convert a nested Julia structure (`Dict`, `Vector`, `NamedTuple`, or scalar)
+into a string of LaTeX commands that define `\\name`, `\\name[key]`,
+`\\name[key][sub]`, …
 
-`name` must be letters only (valid LaTeX macro name).
+`name` must contain only ASCII letters (e.g. `"data"`, `"cfg"`).
+The generated macros require `\\pdfstrcmp` (available in pdfLaTeX and LuaLaTeX).
+
+The `base` keyword controls list indexing: `base=1` (the default) makes the
+first element `\\name[1]`; `base=0` gives 0-based indexing.
+
+!!! note
+    A plain `Dict` works but produces non-deterministic key order.
+    Use `OrderedDict` when order matters — it is re-exported by this package.
+
+# Examples
+
+```julia
+tex = dumps("cfg", Dict("title" => "My paper", "n" => 42))
+# \\cfg[title] → "My paper",  \\cfg[n] → "42",  \\cfg → full JSON
+```
+
+Nested structures relay to sub-commands automatically:
+
+```julia
+tex = dumps("cfg", Dict("colors" => ["red", "blue"]))
+# \\cfg[colors][1] → "red",  \\cfg[colors][2] → "blue"  (default base=1)
+```
 """
-function dumps(name::AbstractString, obj)
+function dumps(name::AbstractString, obj; base::Int = 1)
     check_name(name)
     sname = String(name)
     io = IOBuffer()
     print(io, "\\makeatletter%\n")
-    to_convert = OrderedDict{Int,Any}(0 => obj)
+    to_convert = OrderedDict{Int, Any}(0 => obj)
     index = Ref(1)
     while !isempty(to_convert)
-        ind = first(keys(to_convert))
-        current = to_convert[ind]
-        delete!(to_convert, ind)
-        _convert_one!(io, sname, ind, current, to_convert, index)
+        ind, current = popfirst!(to_convert)
+        _convert_one!(io, sname, ind, current, to_convert, index, base)
     end
     print(io, "%\n\\makeatother%")
     String(take!(io))
 end
 
-"""
-    dump_tex(name, obj, fp)
+# Infer the LaTeX command name and .tex output path from a JSON file path.
+_name_from_json(json_file) = splitext(basename(json_file))[1]
+_tex_from_json(json_file) = splitext(json_file)[1] * ".tex"
 
-Write the LaTeX commands for `obj` to the IO stream `fp`.
 """
-function dump_tex(name::AbstractString, obj, fp::IO)
-    write(fp, dumps(name, obj))
+    generate_tex(json_file; name, tex_file)
+
+Read `json_file` and write LaTeX macro definitions to `tex_file`, using
+`name` as the command name.  Both `name` and `tex_file` are inferred from
+`json_file` when omitted:
+
+- `name` defaults to the filename stem (e.g. `"data"` from `"data.json"`).
+- `tex_file` defaults to `json_file` with the extension replaced by `.tex`,
+  placing the output next to the source JSON.
+
+Key order from the source JSON is always preserved.
+
+# Examples
+
+```julia
+using json2latex
+generate_tex("data.json")  # → data.tex, \\data
+generate_tex("inputs/data.json"; tex_file="build/data.tex")
+```
+
+See also: [`dumps`](@ref), [`generate_tex!`](@ref).
+"""
+function generate_tex(json_file;
+    name     = _name_from_json(json_file),
+    tex_file = _tex_from_json(json_file),
+    base::Int = 1,
+)
+    obj = JSON.parsefile(json_file; dicttype = OrderedDict)
+    open(tex_file, "w") do io
+        write(io, dumps(name, obj; base))
+    end
+    nothing
 end
 
-# ---------------------------------------------------------------------------
-# Update workflow (replaces write_data_to_tex.jl / PythonCall version)
-# ---------------------------------------------------------------------------
-
 """
-    update_and_generate_tex(new_data; json_file, tex_file, command_name, overwrite)
+    generate_tex!(json_file, new_data; name, tex_file, overwrite)
 
-Merge `new_data` into an existing JSON file, then regenerate the TeX file.
-Equivalent to the old `update_and_generate_tex` from `write_data_to_tex.jl`
-but without any Python dependency.
+Merge `new_data` into `json_file`, then regenerate `tex_file` with
+[`dumps`](@ref).  If `json_file` does not yet exist (or `overwrite=true`)
+it is created from scratch.
+
+`name` and `tex_file` are inferred from `json_file` when omitted (see
+[`generate_tex`](@ref) for the inference rules).
+
+This is intended for **incremental update** workflows where a JSON backing
+store accumulates data across multiple script runs.  For one-shot file
+conversion use [`generate_tex`](@ref) instead.
+
+# Arguments
+- `json_file`: path to the JSON backing store.
+- `new_data`: any `Dict`-like object whose entries are merged into the stored JSON.
+
+# Keyword arguments
+- `name`: LaTeX macro name (default: stem of `json_file`).
+- `tex_file`: output path (default: `json_file` with `.tex` extension).
+- `overwrite`: if `true`, ignore any existing `json_file` (default `false`).
+
+# Example
+
+```julia
+# First run: creates data.json and data.tex
+generate_tex!("data.json", Dict("version" => "1.0"))
+
+# Later run: merges new keys, regenerates both files
+generate_tex!("data.json", Dict("accuracy" => 0.95))
+```
 """
-function update_and_generate_tex(new_data;
-        json_file    = "data.json",
-        tex_file     = "data.tex",
-        command_name = "data",
-        overwrite    = false)
-    T = OrderedDict{String,Any}
+function generate_tex!(
+    json_file,
+    new_data;
+    name      = _name_from_json(json_file),
+    tex_file  = _tex_from_json(json_file),
+    overwrite = false,
+    base::Int = 1,
+)
+    T = OrderedDict{String, Any}
     current = (!overwrite && isfile(json_file)) ?
-              JSON.parsefile(json_file; dicttype=OrderedDict) : T()
+              JSON.parsefile(json_file; dicttype = OrderedDict) : T()
     merge!(current, T(new_data))
     open(json_file, "w") do io
         JSON.print(io, current, 2)
     end
     open(tex_file, "w") do io
-        dump_tex(command_name, current, io)
+        write(io, dumps(name, current; base))
     end
     nothing
 end
 
 # ---------------------------------------------------------------------------
-# CLI entry point:  json2latex <input.json> <name> <output.tex>
+# CLI entry point
 # ---------------------------------------------------------------------------
 
+function parse_commandline()
+    s = ArgParseSettings(
+        prog        = "json2latex",
+        description = "Convert a JSON file into LaTeX macro definitions.\n\n\
+                       The generated macros are compatible with pdfLaTeX and LuaLaTeX. \
+                       Use \\<name>[key] to access individual fields, \
+                       \\<name> for the full JSON.",
+        version     = string(pkgversion(json2latex)),
+    )
+    @add_arg_table! s begin
+        "input"
+            help     = "path to the input JSON file"
+            required = true
+        "--name", "-n"
+            help    = "LaTeX command name, ASCII letters only \
+                       (default: filename stem of input)"
+            metavar = "NAME"
+        "--output", "-o"
+            help    = "output path for the generated .tex file \
+                       (default: input with .tex extension)"
+            metavar = "PATH"
+        "--base", "-b"
+            help    = "starting index for list elements (default: 1)"
+            metavar = "N"
+            arg_type = Int
+            default  = 1
+        "--version", "-v"
+            action  = :show_version
+            help    = "show version and exit"
+    end
+    s
+end
+
 function (@main)(ARGS)
-    if length(ARGS) != 3
-        println(stderr, "Usage: json2latex <input.json> <name> <output.tex>")
-        return 1
-    end
-    input_json, name, output_tex = ARGS
-    if !isfile(input_json)
-        println(stderr, "File not found: $input_json")
-        return 1
-    end
+    args = parse_args(ARGS, parse_commandline())
+    isnothing(args) && return 0
+
+    kw = filter(p -> !isnothing(p.second), [
+        :name     => args["name"],
+        :tex_file => args["output"],
+        :base     => args["base"],
+    ])
+
     try
-        obj = JSON.parsefile(input_json; dicttype=OrderedDict)
-        open(output_tex, "w") do io
-            dump_tex(name, obj, io)
-        end
+        generate_tex(args["input"]; kw...)
     catch e
-        println(stderr, "Error: $e")
+        print(stderr, "Error: ")
+        showerror(stderr, e)
+        println(stderr)
         return 1
     end
     return 0
 end
 
-end # module
+end # module json2latex

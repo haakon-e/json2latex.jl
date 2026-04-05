@@ -1,0 +1,7 @@
+[deps]
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+json2latex = "d1e23e7f-4b8a-4c1a-9f2b-3a5c6d7e8f9a"
+
+[sources]
+json2latex = {path = "/Users/haakon/Documents/code/json2latex.jl"}

@@ -1,0 +1,6 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+json2latex = "d1e23e7f-4b8a-4c1a-9f2b-3a5c6d7e8f9a"
+
+[compat]
+Documenter = "1"
