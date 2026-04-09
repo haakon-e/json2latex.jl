@@ -1,11 +1,15 @@
 # TexData.jl
 
-Make Julia data accessible directly in LaTeX documents — no more pasting values by hand.
+Make Julia data accessible directly in LaTeX documents — no more pasting and updating values by hand.
+
+Save numbers and text from your simulations, experiments, and analyses:
 
 ```julia
 using TexData
 write_tex(Dict("accuracy" => 0.974, "n" => 2000, "lr" => 0.001, "epochs" => 50), "results")
 ```
+
+then easily insert the values into your LaTeX document:
 
 ```latex
 \documentclass{article}
@@ -43,7 +47,7 @@ Pkg.add(url="https://github.com/haakon-e/TexData.jl")
 using Pkg
 Pkg.Apps.add(url="https://github.com/haakon-e/TexData.jl")
 ```
-This installs the `TexData` command to `~/.julia/bin/`. Make sure this directory is in your `PATH`.
+This installs the `texdata` command to `~/.julia/bin/`. Make sure this directory is in your `PATH`.
 
 ---
 
@@ -65,7 +69,8 @@ write_tex(results, name; tex_file = "paper/results.tex")
 To persist data across runs and keep a human-readable JSON record alongside the TeX file:
 
 ```julia
-# Creates results.json + results.tex on first call; merges and regenerates on subsequent calls
+# Creates results.json + results.tex on first call; 
+# merges and regenerates on subsequent calls
 sync_tex!("results.json", results)
 ```
 

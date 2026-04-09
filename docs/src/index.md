@@ -13,6 +13,8 @@ using Pkg; Pkg.Apps.add(url="https://github.com/haakon-e/TexData.jl")  # as a CL
 
 Julia Apps are installed to `~/.julia/bin/`. Ensure this directory is in your `PATH` to use the CLI tool.
 
+Save numbers and text from your simulations, experiments, and analyses:
+
 ```julia
 using TexData
 
@@ -25,6 +27,8 @@ results = Dict(
 
 write_tex(results, "results")
 ```
+
+Then easily insert the values into your LaTeX document:
 
 ```latex
 \input{results}

@@ -210,10 +210,8 @@ end
 function parse_commandline()
     s = ArgParseSettings(
         prog = "TexData",
-        description = "Convert a JSON file into LaTeX macro definitions.\n\n\
-                       The generated macros are compatible with pdfLaTeX and LuaLaTeX. \
-                       Use \\<name>[key] to access individual fields, \
-                       \\<name> for the full JSON.",
+        description = "Convert a JSON file into LaTeX macro definitions. \n
+                       Use \\<name>[key] to access individual fields.",
         version = string(pkgversion(TexData)),
     )
     @add_arg_table! s begin
@@ -221,17 +219,17 @@ function parse_commandline()
         help = "path to the input JSON file"
         required = true
         "--name", "-n"
-        help = "LaTeX command name, ASCII letters only \
+        help = "LaTeX command name, ASCII letters only \n
                 (default: filename stem of input)"
         metavar = "NAME"
         "--output", "-o"
-        help = "output path for the generated .tex file \
+        help = "output path for the generated .tex file \n
                 (default: input with .tex extension)"
         metavar = "PATH"
         "--base", "-b"
-        help = "starting index for list elements (default: 1)"
+        help = "starting index for list elements"
         metavar = "N"
-        arg_type = Int
+        arg_type = Integer
         default = 1
         "--version", "-v"
         action = :show_version
