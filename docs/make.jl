@@ -3,13 +3,19 @@ using Documenter, TexData
 makedocs(
     sitename = "TexData.jl",
     modules  = [TexData],
-    format   = Documenter.HTML(prettyurls = false),
+    format   = Documenter.HTML(
+        prettyurls = get(ENV, "CI", nothing) == "true",
+    ),
     pages    = [
         "Home"              => "index.md",
         "LaTeX integration" => "latex_integration.md",
     ],
-    remotes    = nothing,
-    doctest    = false,
-    checkdocs  = :exports,
-    warnonly   = true,
+    doctest   = false,
+    checkdocs = :exports,
+)
+
+deploydocs(
+    repo         = "github.com/haakon-e/TexData.jl",
+    devbranch    = "main",
+    push_preview = true,
 )
