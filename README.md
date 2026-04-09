@@ -4,12 +4,12 @@
 
 # TexData.jl
 
-Make Julia data accessible directly in LaTeX documents — no more pasting and updating values by hand.
+[![stable][docs-stable-img]][docs-stable-url]
+[![dev][docs-dev-img]][docs-dev-url]
+[![gha ci][gha-ci-img]][gha-ci-url]
+[![license][license-img]][license-url]
 
-|||
-|------------------------------:|:-------------------------------------------------|
-| **Documentation**             | [![stable][docs-stable-img]][docs-stable-url] [![dev][docs-dev-img]][docs-dev-url] |
-| **GHA CI**                    | [![gha ci][gha-ci-img]][gha-ci-url]              |
+Make Julia data accessible directly in LaTeX documents — no more pasting and updating values by hand.
 
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stable-url]: https://haakon-e.github.io/TexData.jl/stable/
@@ -19,6 +19,9 @@ Make Julia data accessible directly in LaTeX documents — no more pasting and u
 
 [gha-ci-img]: https://github.com/haakon-e/TexData.jl/actions/workflows/ci.yml/badge.svg
 [gha-ci-url]: https://github.com/haakon-e/TexData.jl/actions/workflows/ci.yml
+
+[license-img]: https://img.shields.io/badge/license-MIT-blue.svg
+[license-url]: https://github.com/haakon-e/TexData.jl/blob/main/LICENSE
 
 Save numbers and text from your simulations, experiments, and analyses:
 
@@ -50,8 +53,6 @@ Training used learning rate $\eta = \results[lr]$ for \results[epochs] epochs.
 
 View this code sample as a pdf document [here](https://www.overleaf.com/read/rwjkvpdbtqjv#a7cc84).
 
----
-
 ## Installation
 
 ### As a library
@@ -69,8 +70,6 @@ Pkg.Apps.add(url="https://github.com/haakon-e/TexData.jl")
 ```
 This installs the `texdata` command to `~/.julia/bin/`. Make sure this directory is in your `PATH`.
 
----
-
 ## Usage
 
 ```julia
@@ -80,10 +79,10 @@ results = Dict("accuracy" => 0.974, "n" => 2000, "lr" => 0.001, "epochs" => 50)
 name = "results"   # becomes \results in LaTeX
 
 # Write to results.tex in the current directory
-write_tex(results, name)
+write_tex(name, results)
 
 # Or write to a specific path
-write_tex(results, name; tex_file = "paper/results.tex")
+write_tex(name, results; tex_file = "paper/results.tex")
 ```
 
 To persist data across runs and keep a human-readable JSON record alongside the TeX file:
@@ -110,11 +109,5 @@ and LaTeX integration guide.
 
 ## Acknowledgements
 
-This package is a Julia port of the
+This package is a Julia adaptation of the
 [json2latex](https://github.com/CameronDevine/json2latex) Python library.
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).

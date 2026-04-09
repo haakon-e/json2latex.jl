@@ -33,7 +33,7 @@ results = Dict(
     "config"   => Dict("lr" => 0.001, "epochs" => 50),
 )
 
-write_tex(results, "results")
+write_tex("results", results)
 ```
 This will create a `results.tex` file in the current directory.
 Place this file in a directory where LaTeX can find it, 
@@ -65,8 +65,8 @@ View this code sample as a pdf document [here](https://www.overleaf.com/read/rwj
 ### Julia data → TeX
 
 ```julia
-write_tex(results, "results")                              # → results.tex
-write_tex(results, "results"; tex_file = "build/res.tex") # custom output path
+write_tex("results", results)                              # → results.tex
+write_tex("results", results; tex_file = "build/res.tex") # custom output path
 ```
 
 The `results` data can be a plain `Dict`. To ensure the order of keys are
