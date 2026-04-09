@@ -1,6 +1,24 @@
+<div align="center">
+  <img src="docs/src/assets/logo.svg" alt="TexData.jl Logo" width="400">
+</div>
+
 # TexData.jl
 
 Make Julia data accessible directly in LaTeX documents — no more pasting and updating values by hand.
+
+|||
+|------------------------------:|:-------------------------------------------------|
+| **Documentation**             | [![stable][docs-stable-img]][docs-stable-url] [![dev][docs-dev-img]][docs-dev-url] |
+| **GHA CI**                    | [![gha ci][gha-ci-img]][gha-ci-url]              |
+
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-stable-url]: https://haakon-e.github.io/TexData.jl/stable/
+
+[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
+[docs-dev-url]: https://haakon-e.github.io/TexData.jl/dev/
+
+[gha-ci-img]: https://github.com/haakon-e/TexData.jl/actions/workflows/ci.yml/badge.svg
+[gha-ci-url]: https://github.com/haakon-e/TexData.jl/actions/workflows/ci.yml
 
 Save numbers and text from your simulations, experiments, and analyses:
 

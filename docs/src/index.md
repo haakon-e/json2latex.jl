@@ -1,6 +1,12 @@
+```@raw html
+<div align="center">
+  <img src="assets/logo.svg" alt="TexData.jl Logo" width="400">
+</div>
+```
+
 # TexData.jl
 
-A Julia package for making data accessible directly in LaTeX documents.
+Make Julia data accessible directly in LaTeX documents — no more pasting and updating values by hand.
 
 ---
 
@@ -117,9 +123,9 @@ dumps
 
 ---
 
-## LaTeX integration
+## Use in LaTeX documents
 
-See the [LaTeX integration guide](latex_integration.html) for how to use the
+See the [LaTeX integration guide](@ref) for how to use the
 generated `.tex` file in a document, including siunitx compatibility and a full
 macro reference table.
 

@@ -33,7 +33,7 @@ sync_tex!("data.json", Dict("version" => "2.0"))
     `OrderedDict` to `dumps` — it is re-exported by this package so no
     additional `using` statement is required.
 
-See the [LaTeX integration](@ref) guide for how to use the generated `.tex` file in a document.
+See the [LaTeX integration guide](@ref) for how to use the generated `.tex` file in a document.
 
 See also: [`dumps`](@ref), [`write_tex`](@ref), [`sync_tex!`](@ref).
 """
@@ -103,7 +103,7 @@ _name_from_json(json_file) = splitext(basename(json_file))[1]
 _tex_from_json(json_file) = splitext(json_file)[1] * ".tex"
 
 """
-    write_tex(name, data; tex_file, base=1)
+    write_tex(name, data; tex_file = "<name>.tex", base=1)
 
 Export `data` to a `.tex` file so it can be accessed directly in LaTeX via `\\name[key]`.
 
@@ -122,7 +122,7 @@ Export `data` to a `.tex` file so it can be accessed directly in LaTeX via `\\na
 write_tex("cfg", Dict("lr" => 0.001, "epochs" => 50))  # → cfg.tex
 ```
 
-See the [LaTeX integration](@ref) guide for how to use the generated `.tex` file in a document.
+See the [LaTeX integration guide](@ref) for how to use the generated `.tex` file in a document.
 
 See also: [`dumps`](@ref), [`sync_tex!`](@ref).
 """
@@ -173,7 +173,7 @@ To regenerate data.tex from data.json without updating any entires, simply call
 sync_tex!(json_file)
 ```
 
-See the [LaTeX integration](@ref) guide for how to use the generated `.tex` file in a document.
+See the [LaTeX integration guide](@ref) for how to use the generated `.tex` file in a document.
 
 See [`write_tex`](@ref) for direct Dict-to-TeX conversion and 
     [`dumps`](@ref) to obtain the string that is written to tex.
@@ -197,10 +197,10 @@ function sync_tex!(
         @warn "No data to write. $json_str"
         return nothing
     end
-    open(json_file, "w") do io
+    !isempty(new_data) && open(json_file, "w") do io
         JSON.print(io, current, 2)
     end
-    write_tex(current, name; tex_file, base)
+    write_tex(name, current; tex_file, base)
 end
 
 # ---------------------------------------------------------------------------
@@ -209,7 +209,7 @@ end
 
 function parse_commandline()
     s = ArgParseSettings(
-        prog = "TexData",
+        prog = "texdata",
         description = "Convert a JSON file into LaTeX macro definitions. \n
                        Use \\<name>[key] to access individual fields.",
         version = string(pkgversion(TexData)),
@@ -242,13 +242,16 @@ function (@main)(ARGS)
     args = parse_args(ARGS, parse_commandline())
     isnothing(args) && return 0
 
+    json_file = args["input"]
+    name = something(args["name"], _name_from_json(json_file))
     kw = filter(p -> !isnothing(p.second), [
         :tex_file => args["output"],
         :base => args["base"],
     ])
 
     try
-        write_tex(args["input"], args["name"]; kw...)
+        data = JSON.parsefile(json_file; dicttype = OrderedDict)
+        write_tex(name, data; kw...)
     catch e
         print(stderr, "Error: ")
         showerror(stderr, e)

@@ -1,4 +1,4 @@
-# LaTeX integration
+# LaTeX integration guide
 
 ## Document setup
 

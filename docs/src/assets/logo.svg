@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 110" width="320" height="110">
+  <!-- \texdata[ Julia dots ] — colored backslash, bold, dark background -->
+
+  <defs>
+    <linearGradient id="slashGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#CB3C33"/>
+      <stop offset="50%" stop-color="#9558B2"/>
+      <stop offset="100%" stop-color="#389826"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Dark pill background -->
+  <rect x="0" y="8" width="320" height="94" rx="16" fill="#1e1e2e"/>
+
+  <!-- Colored backslash -->
+  <text x="12" y="74" font-family="Georgia, 'Times New Roman', serif" font-size="50" font-weight="bold" fill="url(#slashGrad)">\</text>
+
+  <!-- "texdata" in white -->
+  <text x="36" y="74" font-family="Georgia, 'Times New Roman', serif" font-size="50" fill="#e0e0e0">texdata</text>
+
+  <!-- Opening bracket -->
+  <text x="198" y="74" font-family="Georgia, 'Times New Roman', serif" font-size="50" fill="#888">[</text>
+
+  <!-- Julia three-dot triangle (centered between brackets) -->
+  <circle cx="242" cy="40" r="10" fill="#CB3C33"/>
+  <circle cx="230" cy="64" r="10" fill="#9558B2"/>
+  <circle cx="254" cy="64" r="10" fill="#389826"/>
+
+  <!-- Closing bracket -->
+  <text x="268" y="74" font-family="Georgia, 'Times New Roman', serif" font-size="50" fill="#888">]</text>
+</svg>

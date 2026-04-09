@@ -29,7 +29,7 @@ end
 # Throw ArgumentError if `name` is not a valid LaTeX command name.
 # Only ASCII letters [a-zA-Z] are permitted; the TeX tokeniser does not
 # recognise Unicode letters or digits as part of a command name.
-function check_name(name)
+function check_name(name::AbstractString)
     isempty(name) && throw(ArgumentError("LaTeX macro name must not be empty"))
     for c in name
         ('a' <= c <= 'z' || 'A' <= c <= 'Z') ||
@@ -150,7 +150,7 @@ function _convert_one!(io, name, ind, obj, to_convert, index, base = 1)
     print(io, "\n  ")
     print(io, "\\ifnum\\pdfstrcmp{#1}{all}=0%")
     print(io, "\n    ")
-    _def_out!(io, name, ind, JSON.json(obj, 2))
+    _def_out!(io, name, ind, chomp(JSON.json(obj, 2)))
     print(io, "\n  ")
     print(io, "\\else%")
     print(io, "\n    ")

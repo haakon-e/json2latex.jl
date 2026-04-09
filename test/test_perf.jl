@@ -63,18 +63,18 @@ end
     @test @allocated(dumps(_PERF_LARGE, "bench")) < 120_000   # observed ≈ 78 kB
 end
 
-@testset "write_tex (JSON) — timing and allocation budget" begin
+@testset "sync_tex! (JSON) — timing and allocation budget" begin
     N = 10
     json = joinpath(@__DIR__, "test.json")
 
     mktempdir() do dir
         out = joinpath(dir, "out.tex")
 
-        write_tex(json, "data"; tex_file = out)   # JIT warm-up
+        sync_tex!(json; tex_file = out)   # JIT warm-up
 
-        t = minimum(@elapsed(write_tex(json, "data"; tex_file = out)) for _ in 1:N)
+        t = minimum(@elapsed(sync_tex!(json; tex_file = out)) for _ in 1:N)
         @test t < 2e-3   # < 2 ms  (observed ≈ 93 µs; includes JSON parse + write)
 
-        @test @allocated(write_tex(json, "data"; tex_file = out)) < 40_000   # observed ≈ 26 kB
+        @test @allocated(sync_tex!(json; tex_file = out)) < 40_000   # observed ≈ 30 kB
     end
 end
